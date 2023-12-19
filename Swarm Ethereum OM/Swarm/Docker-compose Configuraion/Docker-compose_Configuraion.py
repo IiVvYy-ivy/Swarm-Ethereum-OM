@@ -1,17 +1,18 @@
 
 # IMPORT RELEVANT MOUDLE YAML(python to yaml) & ORDEREDDICT(output YAML in the original dictionary order)
+
 import yaml
 from collections import OrderedDict
-#生成 docker-compose.yaml
 print("Make docker-compose.yaml")
+
 # SETTING PARAMETERS: START/END INDEX, IMAGE VERSION, DESTIONATION DIR, START API ADDR PORT, START P2P ADDR PORT, START DEBUG ADDR PORT, SERVICES DICT
-#选择你需要上传dc文件的目录
+
 IP=str(input('input ip of you wanna put docker-compose file:'))
-#选择节点所在的目录
+
 directory=str(input("input bees generate dir:"))
-#bee的起始索引
+
 num1=int(input('input start bee index:'))
-#bee的终止索引
+
 num2=int(input('input end bee index:'))
 
 
@@ -20,7 +21,7 @@ services = {}
 # SETTING PARAMETERS OF SERVICES
 for i in range(num1, (num2+1)):
     service_name = f'bee-{i}'
-    #设定API P2P DEBUG端口
+
     API_ADDR_PORT=int(input("Input api addr port:"))+(i-1)*3
     
     P2P_ADDR_PORT=int(input("Input p2p addr port:"))+(i-1)*3
@@ -34,7 +35,7 @@ for i in range(num1, (num2+1)):
     volumes_variable=[f'{directory}/bee-{i}:/home/bee/.bee',f'{directory}/password:/home/bee/.bee/password']
     
     services[service_name] = {
-        'image': f'ethersphere/bee:1.18.2', #设定节点版本
+        'image': f'ethersphere/bee:1.18.2', 
         'restart': 'unless-stopped',
         'environment':enviroment_variable,
         'ports':ports_variable,
