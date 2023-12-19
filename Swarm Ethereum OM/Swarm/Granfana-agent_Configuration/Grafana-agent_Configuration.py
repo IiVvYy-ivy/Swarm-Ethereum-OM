@@ -1,4 +1,4 @@
-# 需要先执行port.py
+
 import yaml
 import sys
 select_location = sys.argv[1]
