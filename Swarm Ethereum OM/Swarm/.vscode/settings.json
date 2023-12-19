@@ -1,0 +1,19 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "previewLimit": 50,
+            "server": "36.156.102.113",
+            "port": 3306,
+            "driver": "MySQL",
+            "database": "liantuo_service",
+            "username": "root",
+            "name": "Swarm",
+            "askForPassword": true
+        }
+    ],
+    "vscode-live2d.model": "bilibili-33"
+}
