@@ -218,7 +218,7 @@ class Generate_Grafana_Agent_File:
 
 class Build_Functions_choice_Dictionary:
     def __init__(self,index,choice):
-        self.choice_dictionary =  {  
+        self.choice_dictionary =  {         # Add any function here
         0: 'generate docker-compose.yaml',  
         1: 'replace .env',  
         2: 'replace docker-compose.yaml',  
@@ -245,8 +245,8 @@ class Build_Functions_choice_Dictionary:
         self.choice_dictionary[self.index]= self.choice    
 
 class Build_IP_Dictionary:
-    def __init__(self,location,ip_addresses):
-        self.IP_dictionary = {
+    def __init__(self,location,ip_addresses):  
+        self.IP_dictionary = {     # Add your ip list here
             'x1' : ['127.0.0.1'],
             'x2' : ["xxxx"],
             '<location>' : ['ssh_ip1','ssh_ip2']
@@ -264,7 +264,7 @@ class Build_IP_Dictionary:
 class Build_Password_Dictionary(Build_IP_Dictionary):
     def __init__(self, location, ip_address, password, new_password):
         super().__init__(location, ip_address)
-        self.password_dictionary = {
+        self.password_dictionary = {               # Add your password correspond to ip here
             'x1' : '<ssh passsword for x1>',
             'x2' : 'xxxxx',
             '<location>' : 'ssh password for <location>'
@@ -284,7 +284,7 @@ class Build_Password_Dictionary(Build_IP_Dictionary):
 class Build_Username_Dictionary(Build_IP_Dictionary):
     def __init__(self, location, ip_addresses, username, new_username):
         super().__init__(location, ip_addresses)
-        self.username_dictionary = {
+        self.username_dictionary = {            # Add your username correspond to ip here
             'x1' : 'ssh username for x1',
             'x2' : 'xxxx',
             '<location>' : 'ssh username for <location>'

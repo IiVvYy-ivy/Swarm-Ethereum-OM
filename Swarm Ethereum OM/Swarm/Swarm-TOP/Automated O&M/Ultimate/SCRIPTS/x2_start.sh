@@ -11,7 +11,7 @@ done
 echo
 echo
 
-# 询问是否需要继续执行脚本    
+  
 read -p "Countinue Script? (yes/no) " answer 
 
 if [ "$answer" != "yes" ]; then    

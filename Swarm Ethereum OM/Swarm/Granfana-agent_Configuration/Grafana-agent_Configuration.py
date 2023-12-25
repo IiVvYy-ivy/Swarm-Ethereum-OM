@@ -1,4 +1,3 @@
-
 import yaml
 import sys
 select_location = sys.argv[1]
@@ -14,7 +13,7 @@ static_configuration=[
             'targets': [f'localhost:{port}'],
             'labels': {
                 'instance': f'{ip}:{port}',
-                'top': '<top_name>',
+                'top': '<top_name>',          # Change your own top name
                 'cluster': f'{ip}' 
             }  
          }
@@ -75,5 +74,5 @@ grafanaconfig={
     'metrics': metrics, 
     'integrations': integrations         
 }
-with open(f'E:\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\GRAFANA-AGENT\\{ip+"grafana-agent.yaml"}', 'w') as file:  
+with open(f'E:\\Swarm Ethereum OM\\Swarm-TOP\\Automated O&M\\Ultimate\\GRAFANA-AGENT\\{ip+"grafana-agent.yaml"}', 'w') as file:  
     yaml.dump(grafanaconfig, file,default_flow_style=False,sort_keys=False)
