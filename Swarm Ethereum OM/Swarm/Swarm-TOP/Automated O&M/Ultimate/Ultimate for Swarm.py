@@ -2,6 +2,43 @@ import paramiko
 import time
 import os
 import pymysql
+import configparser
+
+class Update_Configuration:
+    def __init__(self):
+        self.config = configparser.ConfigParser()
+        self.config_path = self.config.read(FileFinder('configuration.ini').finder())
+    
+    def get_database_configuration(self):
+        self.database_config_dict = {}
+        for key, value in self.config.items('DATABASE'):  
+            self.database_config_dict[key] = value
+        return self.database_config_dict
+    
+    def get_ip_configuraion(self):
+        self.ip_config_sections = []
+        self.ip_config_dict = {}
+        for section in self.config.sections():  
+            if "IP" in section:  
+                self.ip_config_sections.append(section)
+        for ip_config_section in self.ip_config_sections:
+            for key, value in self.config.items(ip_config_section):  
+                self.ip_config_dict[key] = value
+        return self.ip_config_dict
+
+class FileFinder:  
+    def __init__(self, file_or_folder_name):  
+        self.file_or_folder_name = file_or_folder_name  
+      
+    def finder(self):  
+        for root, dirs, files in os.walk(os.getcwd()):  # 遍历根目录下的所有文件和文件夹  
+            if self.file_or_folder_name in dirs:  # 如果文件夹名称匹配，则输出文件夹路径  
+                return os.path.join(root, self.file_or_folder_name)  
+            for file in files:  
+                if file == self.file_or_folder_name:  # 如果文件名称匹配，则输出文件路径  
+                    return os.path.join(root, file)  
+        return None  # 如果没有找到文件或文件夹，则返回None
+    
 
 class Swarm_OM:
     def __init__(self,ip,user,pwd):
@@ -96,7 +133,8 @@ class Substract_dcdir:
         self.ip = ip
     
     def substract_dcdir(self):
-        with open(f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\DIR\\{self.select_location +"_DIR"}\\{self.ip+"dcdir.txt"}', 'r') as f:   
+        self.dc_path = FileFinder(f'{self.select_location +"_DIR"}').finder()
+        with open(os.path.join(self.dc_path,f'{self.ip+"dcdir.txt"}'), 'r') as f:   
             lines = f.readlines()  
         dcdir = [line.strip() for line in lines]  
         return dcdir
@@ -106,7 +144,8 @@ class Substract_port(Substract_dcdir):
         super().__init__(select_location , ip)
 
     def substract_port(self):
-        with open(f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\PORT\\{self.select_location+"_PORT"}\\{self.ip+"port.txt"}', 'r') as f:   
+        self.port_path = FileFinder(f'{self.select_location+"_PORT"}').finder()
+        with open(os.path.join(self.port_path,f'{self.ip+"port.txt"}'), 'r') as f:   
             lines = f.readlines()  
         port = [line.strip() for line in lines]  
         return port
@@ -206,7 +245,7 @@ class Generate_Grafana_Agent_File:
         self.parameter_ip = parameter_ip
 
     def generate_grafna_agent_file(self):
-        path = 'E:\\Swarm Ethereum OM\\Swarm\\Granfana-agent_Configuration\\Grafana-agent_Configuration.py'
+        path = FileFinder('Grafana-agent_Configuration.py').finder()
         if os.path.isfile(path):  
             os.system(f"python {path} {self.parameter_location} {self.parameter_ip}")  
         else:  
@@ -336,49 +375,54 @@ def execute_function(select_location,select_function):
             ip_list=Build_IP_Dictionary(f'{select_location}',None).IP_dictionary[f'{select_location}']
             username = Build_Username_Dictionary(f'{select_location}',None,None,None).username_dictionary[f'{select_location}']
             password = Build_Password_Dictionary(f'{select_location}',None,None,None).password_dictionary[f'{select_location}']
+            env_path = FileFinder(f'{select_location+"_.env"}').finder()
             for ip in ip_list:
-                Replace(f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\.env\\{select_location+"_.env"}\\.env','<old text need to be replaced>','<The new text that was replaced>').replace_in_dir()
+                Replace(os.path.join(env_path,'.env'),'<old text need to be replaced>','<The new text that was replaced>').replace_in_dir()
         case 2:
             ip_list=Build_IP_Dictionary(f'{select_location}',None).IP_dictionary[f'{select_location}']
             username = Build_Username_Dictionary(f'{select_location}',None,None,None).username_dictionary[f'{select_location}']
             password = Build_Password_Dictionary(f'{select_location}',None,None,None).password_dictionary[f'{select_location}']
+            shell_path = FileFinder('SCRIPTS').finder()
+            DIR_path = FileFinder(f'{select_location+"_DIR"}').finder()
+            Location_DC_path = FileFinder(f'{select_location+"_DC"}').finder()
+            DC_path = FileFinder('DC').finder()
             if select_location != 'customer1':
                 for ip in ip_list:
-                    Upload_file(f'{ip}',f'{username}',f'{password}',f'E:\\Swarm Ethereum OM\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\SCRIPTS\\{select_location+"_dir.sh"}','<remote dir.sh file path>').upload_file()
+                    Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,f'{select_location+"_dir.sh"}'),'<remote dir.sh file path>').upload_file()
                     time.sleep(1)
                     Swarm_OM(f'{ip}',f'{username}',f'{password}').SSHExecute(f'echo {password} | sudo -S bash <remote dir.sh file path>')
                     time.sleep(10)
-                    Download_file(f'{ip}',f'{username}',f'{password}',f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\DIR\\{select_location+"_DIR"}\\{ip+"dcdir.txt"}','<remote dir.txt path>',).download_file()
+                    Download_file(f'{ip}',f'{username}',f'{password}',os.path.join(DIR_path,f'{ip+"dcdir.txt"}'),'<remote dir.txt path>',).download_file()
                     dcdirs = Substract_dcdir(f'{select_location}',f'{ip}').substract_dcdir()
                     for dcdir in dcdirs:
                         newdir = Split(dcdir).split_string()
                         finaldir = Rename(newdir).rename_path()
-                        Download_file(f'{ip}',f'{username}',f'{password}', f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\DC\\{select_location+"_DC"}\\{ip+finaldir+"_docker-compose.yaml"}',f'{newdir}/docker-compose.yaml').download_file()
-                    Replace('E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\DC',"<old bee version>","<new bee version>").replace_in_dir()
+                        Download_file(f'{ip}',f'{username}',f'{password}', os.path.join(Location_DC_path,f'{ip+finaldir+"_docker-compose.yaml"}'),f'{newdir}/docker-compose.yaml').download_file()
+                    Replace(DC_path,"<old bee version>","<new bee version>").replace_in_dir()
                     for dcdir in dcdirs:
                         newdir = Split(dcdir).split_string()
                         finaldir = Rename(newdir).rename_path()
-                        Upload_file(f'{ip}',f'{username}',f'{password}',f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\DC\\{select_location+"_DC"}\\{ip+finaldir+"_docker-compose.yaml"}', f'{newdir}/docker-compose.yaml').upload_file()
+                        Upload_file(f'{ip}',f'{username}',f'{password}', os.path.join(Location_DC_path,f'{ip+finaldir+"_docker-compose.yaml"}'), f'{newdir}/docker-compose.yaml').upload_file()
             
             elif select_location == 'customer1':
                 for ip in ip_list:
-                    Upload_file(f'{ip}',f'{username}',f'{password}',f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\SCRIPTS\\{select_location+"_dir.sh"}','<remote dir.sh file path>').upload_file()
+                    Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,f'{select_location+"_dir.sh"}'),'<remote dir.sh file path>').upload_file()
                     time.sleep(1)
                     Swarm_OM(f'{ip}',f'{username}',f'{password}').SSHExecute(f'echo {password} | sudo -S bash /usr/local/script/dcdir.sh')
                     time.sleep(10)
-                    Download_file(f'{ip}',f'{username}',f'{password}',f'E:\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\DIR\\{select_location+"_DIR"}\\{ip+"dcdir.txt"}','<remote dir.txt file path>',).download_file()
+                    Download_file(f'{ip}',f'{username}',f'{password}',os.path.join(DIR_path,f'{ip+"dcdir.txt"}'),'<remote dir.txt file path>',).download_file()
                     dcdirs = Substract_dcdir(f'{select_location}',f'{ip}').substract_dcdir()
                     for dcdir in dcdirs:
                         newdir = Split(dcdir).split_string()
                         finaldir = Rename(newdir).rename_path()
-                        Download_file(f'{ip}',f'{username}',f'{password}', f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\DC\\{select_location+"_DC"}\\{ip+finaldir+"_docker-compose.yaml"}',f'{newdir}/docker-compose.yaml').download_file()
-                    Replace('E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\DC',"<old bee version>","<new bee version>").replace_in_dir()
-                    # Comment(f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\DC\\{select_location+"_DC"}',f'{ip+"docker-compose.yaml"}',<start line need to be commented>(number), <end line need to be commented>(number)).find_and_comment_lines()
-                    # Cancel_Comment(f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\DC\\{select_location+"_DC"}',f'{ip+"swarm1swarm-new_docker-compose.yaml"}', <start line need to be commented> (number), <end line need to be commented>(number)).cancel_comment_lines()
+                        Download_file(f'{ip}',f'{username}',f'{password}',os.path.join(Location_DC_path,f'{ip+finaldir+"_docker-compose.yaml"}'),f'{newdir}/docker-compose.yaml').download_file()
+                    Replace(DC_path,"<old bee version>","<new bee version>").replace_in_dir()
+                    # Comment(Location_DC_path,f'{ip+"docker-compose.yaml"}',<start line need to be commented>(number), <end line need to be commented>(number)).find_and_comment_lines()
+                    # Cancel_Comment(Location_DC_path,f'{ip+"swarm1swarm-new_docker-compose.yaml"}', <start line need to be commented> (number), <end line need to be commented>(number)).cancel_comment_lines()
                     for dcdir in dcdirs:
                         newdir = Split(dcdir).split_string()
                         finaldir = Rename(newdir).rename_path()
-                        Upload_file(f'{ip}',f'{username}',f'{password}',f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\Automated O&M\\Ultimate\\DC\\{select_location+"_DC"}\\{ip+finaldir+"_docker-compose.yaml"}', f'{newdir}/docker-compose.yaml').upload_file()
+                        Upload_file(f'{ip}',f'{username}',f'{password}', os.path.join(Location_DC_path,f'{ip+finaldir+"_docker-compose.yaml"}')).upload_file()
         case 3:
             print('xxxx')
         case 4:
@@ -393,30 +437,34 @@ def execute_function(select_location,select_function):
             ip_list=Build_IP_Dictionary(f'{select_location}',None).IP_dictionary[f'{select_location}']
             username = Build_Username_Dictionary(f'{select_location}',None,None,None).username_dictionary[f'{select_location}']
             password = Build_Password_Dictionary(f'{select_location}',None,None,None).password_dictionary[f'{select_location}']
+            grafana_agent_path = FileFinder('GRAFANA-AGENT').finder()
             for ip in ip_list:
                 Generate_Grafana_Agent_File(f'{select_location}',f'{ip}').generate_grafna_agent_file()
-                Upload_file(f'{ip}',f'{username}',f'{password}',f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\GRAFANA-AGENT\\{ip+"grafana-agent.yaml"}','/usr/local/bin/grafana-agent.yaml').upload_file()
+                Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(grafana_agent_path,f'{ip+"grafana-agent.yaml"}'),'/usr/local/bin/grafana-agent.yaml').upload_file()
         
         case 9:
             ip_list=Build_IP_Dictionary(f'{select_location}',None).IP_dictionary[f'{select_location}']
+            port_path = FileFinder(f'{select_location+"_PORT"}')
             for ip in ip_list:
                 connect_xxx_db=QueryMySQL('<database_address>','<database_username>','<database_password>','<database_name>',1234) # 1234 is database_port,you need to change your own database
                 connect_xxx_db.query_ports(f'{ip}')
-                connect_xxx_db.save_ports(f'{ip}',f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\PORT\\{select_location+"_PORT"}\\{ip+"port.txt"}')
+                connect_xxx_db.save_ports(f'{ip}',os.path.join(port_path,f'{ip+"port.txt"}'))
                 connect_xxx_db.close_connection()
         case 10:
             ip_list=Build_IP_Dictionary(f'{select_location}',None).IP_dictionary[f'{select_location}']
             username = Build_Username_Dictionary(f'{select_location}',None,None,None).username_dictionary[f'{select_location}']
             password = Build_Password_Dictionary(f'{select_location}',None,None,None).password_dictionary[f'{select_location}']
+            grafana_agent_zip_path = FileFinder('grafana-agent-linux-amd64.zip').finder()
             for ip in ip_list:
-                Upload_file(f'{ip}',f'{username}',f'{password}','E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\MONITOR RELEVANT\\grafana-agent-linux-amd64.zip','/usr/local/bin/grafana-agent.zip').upload_file()
+                Upload_file(f'{ip}',f'{username}',f'{password}',grafana_agent_zip_path,'/usr/local/bin/grafana-agent.zip').upload_file()
 
         case 11:
             ip_list=Build_IP_Dictionary(f'{select_location}',None).IP_dictionary[f'{select_location}']
             username = Build_Username_Dictionary(f'{select_location}',None,None,None).username_dictionary[f'{select_location}']
             password = Build_Password_Dictionary(f'{select_location}',None,None,None).password_dictionary[f'{select_location}']
+            shell_path = FileFinder(f'SCRIPTS').finder()
             for ip in ip_list:
-                Upload_file(f'{ip}',f'{username}',f'{password}',f'E:\\Swarm Ethereum OM\\Swarm\\Swarm-TOP\\Automated O&M\\Ultimate\\SCRIPTS\\{select_location+"_start.sh"}','<remote start.sh file path>').upload_file()                
+                Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,f'{select_location+"_start.sh"}'),'<remote start.sh file path>').upload_file()                
         case 12:
             print('xxx')
             
@@ -425,7 +473,7 @@ def execute_function(select_location,select_function):
 def main():
     Build_Functions_choice_Dictionary(None,None).get_function_choice()
     select_function = int(input("which function do you wanna do: (0/1/2...)"))
-    select_location = str(input("where machine do you wannna do: (ningxia,yancheng,customer1,customer2,customer2_top,customertest)"))
+    select_location = str(input("where machine do you wannna do: (x1,x2,location1,location2 ....)"))
     execute_function(select_location,select_function)
         
 
