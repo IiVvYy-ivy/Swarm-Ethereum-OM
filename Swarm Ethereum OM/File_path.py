@@ -1,19 +1,39 @@
-import platform
+import configparser
 import os
-class filepath:
+
+class Update_Configuration:
     def __init__(self):
-        os_name = platform.system()  
-        self.os_name = os_name
+        self.config = configparser.ConfigParser()
+        self.config_path = self.config.read(FileFinder('configuration.ini').finder())
     
-    def find_file_in_directory(directory, filename):  
-        for root, dirs, files in os.walk(directory):  
-            if filename in files:  
-                return os.path.join(root, filename)  
+    def get_database_configuration(self):
+        self.database_config_dict = {}
+        for key, value in self.config.items('DATABASE'):  
+            self.database_config_dict[key] = value
+        return self.database_config_dict
+    
+    def get_ip_configuraion(self):
+        self.ip_config_dict = {} 
+        for section in self.config.sections():
+            if "IP" in section:
+                self.ip_config_dict[section] = {}
+                for key, value in self.config.items(section):  
+                    self.ip_config_dict[section][key] = value
+        return self.ip_config_dict
+
+class FileFinder:  
+    def __init__(self, file_or_folder_name):  
+        self.file_or_folder_name = file_or_folder_name  
+      
+    def finder(self):  
+        for root, dirs, files in os.walk(os.getcwd()):  
+            if self.file_or_folder_name in dirs:   
+                return os.path.join(root, self.file_or_folder_name)  
+            for file in files:  
+                if file == self.file_or_folder_name:    
+                    return os.path.join(root, file)  
         return None  
-
-    def generate_path(self,os_name):
-        if os_name.lower() == "windows":
-            self.work_path = os.getcwd()
-            dest_file_path = filepath.find_file_in_directory(self.work_path,self.filename)
-            
-
+    
+class CreatFolder:
+    def __init__(self):
+        xxxx

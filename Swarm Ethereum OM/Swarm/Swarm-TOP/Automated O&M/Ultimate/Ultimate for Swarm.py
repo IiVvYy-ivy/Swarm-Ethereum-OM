@@ -16,14 +16,12 @@ class Update_Configuration:
         return self.database_config_dict
     
     def get_ip_configuraion(self):
-        self.ip_config_sections = []
-        self.ip_config_dict = {}
-        for section in self.config.sections():  
-            if "IP" in section:  
-                self.ip_config_sections.append(section)
-        for ip_config_section in self.ip_config_sections:
-            for key, value in self.config.items(ip_config_section):  
-                self.ip_config_dict[key] = value
+        self.ip_config_dict = {} 
+        for section in self.config.sections():
+            if "IP" in section:
+                self.ip_config_dict[section] = {}
+                for key, value in self.config.items(section):  
+                    self.ip_config_dict[section][key] = value
         return self.ip_config_dict
 
 class FileFinder:  
@@ -31,13 +29,13 @@ class FileFinder:
         self.file_or_folder_name = file_or_folder_name  
       
     def finder(self):  
-        for root, dirs, files in os.walk(os.getcwd()):  # 遍历根目录下的所有文件和文件夹  
-            if self.file_or_folder_name in dirs:  # 如果文件夹名称匹配，则输出文件夹路径  
+        for root, dirs, files in os.walk(os.getcwd()):  
+            if self.file_or_folder_name in dirs:   
                 return os.path.join(root, self.file_or_folder_name)  
             for file in files:  
-                if file == self.file_or_folder_name:  # 如果文件名称匹配，则输出文件路径  
+                if file == self.file_or_folder_name:    
                     return os.path.join(root, file)  
-        return None  # 如果没有找到文件或文件夹，则返回None
+        return None  
     
 
 class Swarm_OM:
@@ -283,70 +281,43 @@ class Build_Functions_choice_Dictionary:
     def add_choice(self):
         self.choice_dictionary[self.index]= self.choice    
 
+
 class Build_IP_Dictionary:
-    def __init__(self,location,ip_addresses):  
-        self.IP_dictionary = {     # Add your ip list here
-            'x1' : ['127.0.0.1'],
-            'x2' : ["xxxx"],
-            '<location>' : ['ssh_ip1','ssh_ip2']
-        }
-        self.location = location
-        self.__ip_addresses = ip_addresses
-
-    def add_ip(self):  
-        if self.location in self.__IP_dictionary:  
-            self.IP_dictionary[self.location].append(self.__ip_addresses)  
-        else:  
-            self.IP_dictionary[self.location] = [self.__ip_addresses]
+    def __init__(self):  
+        self.IP_dictionary = {}
+        self.ip_config = Update_Configuration().get_ip_configuraion()
+        for IP_section, IP_info in self.ip_config.items():  
+            location = IP_info.get('location')  
+            address_list = IP_info.get('address_list')  
+            self.IP_dictionary[location] = address_list  
 
 
-class Build_Password_Dictionary(Build_IP_Dictionary):
-    def __init__(self, location, ip_address, password, new_password):
-        super().__init__(location, ip_address)
-        self.password_dictionary = {               # Add your password correspond to ip here
-            'x1' : '<ssh passsword for x1>',
-            'x2' : 'xxxxx',
-            '<location>' : 'ssh password for <location>'
-        }
-        self.password = password
-        self.new_password = new_password
-
-    def add_location_password(self):
-        self.password_dictionary[self.location] = self.password
+class Build_Username_Dictionary:
+    def __init__(self):  
+        self.username_dictionary = {}
+        self.ip_config = Update_Configuration().get_ip_configuraion()
+        for IP_section, IP_info in self.ip_config.items():  
+            location = IP_info.get('location')  
+            username = IP_info.get('username')  
+            self.username_dictionary[location] = username        
     
-    def update_existing_location_password(self):
-        if self.location in self.password_dictionary:
-            self.password_dictionary[self.location] = self.new_password
-        else:
-            print(f"The key '{self.location}' does not exist in the password dictionary")
-        
-class Build_Username_Dictionary(Build_IP_Dictionary):
-    def __init__(self, location, ip_addresses, username, new_username):
-        super().__init__(location, ip_addresses)
-        self.username_dictionary = {            # Add your username correspond to ip here
-            'x1' : 'ssh username for x1',
-            'x2' : 'xxxx',
-            '<location>' : 'ssh username for <location>'
-        }
-        self.username = username
-        self.new_username = new_username
-
-    def add_location_username(self):
-        self.username_dictionary[self.location] = self.username
-    
-    def update_existing_location_username(self):
-        if self.location in self.username_dictionary:
-            self.username_dictionary[self.location] = self.new_username
-        else:
-            print(f"The key '{self.location}' does not exist in the username dictionary")
+class Build_Password_Dictionary:
+    def __init__(self):  
+        self.password_dictionary = {}  
+        self.ip_config = Update_Configuration().get_ip_configuraion()
+        for IP_section, IP_info in self.ip_config.items():  
+            location = IP_info.get('location')  
+            password = IP_info.get('password')  
+            self.password_dictionary[location] = password 
 
 class QueryMySQL:  
-    def __init__(self, host, user, password, db,port):  
-        self.host = host  
-        self.user = user  
-        self.password = password  
-        self.db = db 
-        self.port = port 
+    def __init__(self): 
+        self.database_info = Update_Configuration().get_database_configuration() 
+        self.host = self.database_info['host'] 
+        self.user = self.database_info['user'] 
+        self.password = self.database_info['password']   
+        self.db = self.database_info['database'] 
+        self.port = self.database_info['port']  
         self.connection = pymysql.connect(host=self.host, user=self.user, password=self.password, db=self.db, port = self.port)  
   
     def close_connection(self):  
@@ -372,21 +343,21 @@ def execute_function(select_location,select_function):
         case 0:
             print('xxxx')
         case 1:
-            ip_list=Build_IP_Dictionary(f'{select_location}',None).IP_dictionary[f'{select_location}']
-            username = Build_Username_Dictionary(f'{select_location}',None,None,None).username_dictionary[f'{select_location}']
-            password = Build_Password_Dictionary(f'{select_location}',None,None,None).password_dictionary[f'{select_location}']
+            ip_list=Build_IP_Dictionary(f'{select_location}').IP_dictionary[f'{select_location}']
+            username = Build_Username_Dictionary(f'{select_location}').username_dictionary[f'{select_location}']
+            password = Build_Password_Dictionary(f'{select_location}').password_dictionary[f'{select_location}']
             env_path = FileFinder(f'{select_location+"_.env"}').finder()
             for ip in ip_list:
                 Replace(os.path.join(env_path,'.env'),'<old text need to be replaced>','<The new text that was replaced>').replace_in_dir()
         case 2:
-            ip_list=Build_IP_Dictionary(f'{select_location}',None).IP_dictionary[f'{select_location}']
-            username = Build_Username_Dictionary(f'{select_location}',None,None,None).username_dictionary[f'{select_location}']
-            password = Build_Password_Dictionary(f'{select_location}',None,None,None).password_dictionary[f'{select_location}']
+            ip_list=Build_IP_Dictionary(f'{select_location}').IP_dictionary[f'{select_location}']
+            username = Build_Username_Dictionary(f'{select_location}').username_dictionary[f'{select_location}']
+            password = Build_Password_Dictionary(f'{select_location}').password_dictionary[f'{select_location}']
             shell_path = FileFinder('SCRIPTS').finder()
             DIR_path = FileFinder(f'{select_location+"_DIR"}').finder()
             Location_DC_path = FileFinder(f'{select_location+"_DC"}').finder()
             DC_path = FileFinder('DC').finder()
-            if select_location != 'customer1':
+            if select_location == '<location>':
                 for ip in ip_list:
                     Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,f'{select_location+"_dir.sh"}'),'<remote dir.sh file path>').upload_file()
                     time.sleep(1)
@@ -404,25 +375,25 @@ def execute_function(select_location,select_function):
                         finaldir = Rename(newdir).rename_path()
                         Upload_file(f'{ip}',f'{username}',f'{password}', os.path.join(Location_DC_path,f'{ip+finaldir+"_docker-compose.yaml"}'), f'{newdir}/docker-compose.yaml').upload_file()
             
-            elif select_location == 'customer1':
-                for ip in ip_list:
-                    Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,f'{select_location+"_dir.sh"}'),'<remote dir.sh file path>').upload_file()
-                    time.sleep(1)
-                    Swarm_OM(f'{ip}',f'{username}',f'{password}').SSHExecute(f'echo {password} | sudo -S bash /usr/local/script/dcdir.sh')
-                    time.sleep(10)
-                    Download_file(f'{ip}',f'{username}',f'{password}',os.path.join(DIR_path,f'{ip+"dcdir.txt"}'),'<remote dir.txt file path>',).download_file()
-                    dcdirs = Substract_dcdir(f'{select_location}',f'{ip}').substract_dcdir()
-                    for dcdir in dcdirs:
-                        newdir = Split(dcdir).split_string()
-                        finaldir = Rename(newdir).rename_path()
-                        Download_file(f'{ip}',f'{username}',f'{password}',os.path.join(Location_DC_path,f'{ip+finaldir+"_docker-compose.yaml"}'),f'{newdir}/docker-compose.yaml').download_file()
-                    Replace(DC_path,"<old bee version>","<new bee version>").replace_in_dir()
-                    # Comment(Location_DC_path,f'{ip+"docker-compose.yaml"}',<start line need to be commented>(number), <end line need to be commented>(number)).find_and_comment_lines()
-                    # Cancel_Comment(Location_DC_path,f'{ip+"swarm1swarm-new_docker-compose.yaml"}', <start line need to be commented> (number), <end line need to be commented>(number)).cancel_comment_lines()
-                    for dcdir in dcdirs:
-                        newdir = Split(dcdir).split_string()
-                        finaldir = Rename(newdir).rename_path()
-                        Upload_file(f'{ip}',f'{username}',f'{password}', os.path.join(Location_DC_path,f'{ip+finaldir+"_docker-compose.yaml"}')).upload_file()
+            # elif select_location == 'customer1':
+            #     for ip in ip_list:
+            #         Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,f'{select_location+"_dir.sh"}'),'<remote dir.sh file path>').upload_file()
+            #         time.sleep(1)
+            #         Swarm_OM(f'{ip}',f'{username}',f'{password}').SSHExecute(f'echo {password} | sudo -S bash /usr/local/script/dcdir.sh')
+            #         time.sleep(10)
+            #         Download_file(f'{ip}',f'{username}',f'{password}',os.path.join(DIR_path,f'{ip+"dcdir.txt"}'),'<remote dir.txt file path>',).download_file()
+            #         dcdirs = Substract_dcdir(f'{select_location}',f'{ip}').substract_dcdir()
+            #         for dcdir in dcdirs:
+            #             newdir = Split(dcdir).split_string()
+            #             finaldir = Rename(newdir).rename_path()
+            #             Download_file(f'{ip}',f'{username}',f'{password}',os.path.join(Location_DC_path,f'{ip+finaldir+"_docker-compose.yaml"}'),f'{newdir}/docker-compose.yaml').download_file()
+            #         Replace(DC_path,"<old bee version>","<new bee version>").replace_in_dir()
+            #         Comment(Location_DC_path,f'{ip+"docker-compose.yaml"}',<start line need to be commented>(number), <end line need to be commented>(number)).find_and_comment_lines()
+            #         Cancel_Comment(Location_DC_path,f'{ip+"swarm1swarm-new_docker-compose.yaml"}', <start line need to be commented> (number), <end line need to be commented>(number)).cancel_comment_lines()
+            #         for dcdir in dcdirs:
+            #             newdir = Split(dcdir).split_string()
+            #             finaldir = Rename(newdir).rename_path()
+            #             Upload_file(f'{ip}',f'{username}',f'{password}', os.path.join(Location_DC_path,f'{ip+finaldir+"_docker-compose.yaml"}')).upload_file()
         case 3:
             print('xxxx')
         case 4:
@@ -430,7 +401,18 @@ def execute_function(select_location,select_function):
         case 5:
             print('xxxx')
         case 6:
-            print('xxxx')
+            ip_list =  Build_IP_Dictionary().IP_dictionary[f'{select_location}']
+ 
+            username = Build_Username_Dictionary().username_dictionary[f'{select_location}']
+
+            password = Build_Password_Dictionary().password_dictionary[f'{select_location}']
+
+            shell_path = FileFinder(f'SCRIPTS').finder()
+
+            for ip in ip_list:
+                Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,'atom.sh'),'/usr/local/script/atom.sh').upload_file()
+                Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,'wallet.json'),'/atomicals-js/wallets/wallet.json').upload_file()
+ 
         case 7:
             print('xxxx')      
         case 8:
@@ -473,7 +455,7 @@ def execute_function(select_location,select_function):
 def main():
     Build_Functions_choice_Dictionary(None,None).get_function_choice()
     select_function = int(input("which function do you wanna do: (0/1/2...)"))
-    select_location = str(input("where machine do you wannna do: (x1,x2,location1,location2 ....)"))
+    select_location = str(input("where machine do you wannna do: (location ....)"))
     execute_function(select_location,select_function)
         
 
