@@ -288,7 +288,7 @@ class Build_IP_Dictionary:
         self.ip_config = Update_Configuration().get_ip_configuraion()
         for IP_section, IP_info in self.ip_config.items():  
             location = IP_info.get('location')  
-            address_list = IP_info.get('address_list')  
+            address_list = IP_info.get('address_list').split(',')  
             self.IP_dictionary[location] = address_list  
 
 
@@ -402,16 +402,13 @@ def execute_function(select_location,select_function):
             print('xxxx')
         case 6:
             ip_list =  Build_IP_Dictionary().IP_dictionary[f'{select_location}']
- 
             username = Build_Username_Dictionary().username_dictionary[f'{select_location}']
-
             password = Build_Password_Dictionary().password_dictionary[f'{select_location}']
-
             shell_path = FileFinder(f'SCRIPTS').finder()
-
             for ip in ip_list:
-                Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,'atom.sh'),'/usr/local/script/atom.sh').upload_file()
-                Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,'wallet.json'),'/atomicals-js/wallets/wallet.json').upload_file()
+                # Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,'atom.sh'),'/usr/local/script/atom.sh').upload_file()
+                # Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,'wallet.json'),'/atomicals-js/wallets/wallet.json').upload_file()
+                Upload_file(f'{ip}',f'{username}',f'{password}',os.path.join(shell_path,'testblank.txt'),'/usr/local/script/testblank.txt').upload_file()
  
         case 7:
             print('xxxx')      
